@@ -176,4 +176,56 @@ public class FactoryMethodBasic {
             assertThat(htmlResult).isEqualTo("<html>Same Content</html>");
         }
     }
+
+    @Nested
+    class OCP_준수_검증 {
+
+        // 새로운 Product 추가
+        static class MarkdownDocument implements Document {
+            private final String content;
+
+            MarkdownDocument(String content) {
+                this.content = content;
+            }
+
+            @Override
+            public String getType() {
+                return "Markdown";
+            }
+
+            @Override
+            public String render() {
+                return "# " + content;
+            }
+        }
+
+        // 새로운 Creator 추가 - 기존 코드 수정 없음
+        static class MarkdownDocumentCreator extends DocumentCreator {
+            @Override
+            protected Document createDocument(String content) {
+                return new MarkdownDocument(content);
+            }
+        }
+
+        @Test
+        void 새로운_타입_추가시_기존_코드를_수정하지_않는다() {
+            // 기존 Creator들은 전혀 수정되지 않음
+            DocumentCreator markdownCreator = new MarkdownDocumentCreator();
+
+            String result = markdownCreator.createAndRender("New Feature");
+
+            assertThat(result).isEqualTo("# New Feature");
+        }
+
+        @Test
+        void 새로운_Creator도_기존_템플릿_로직을_그대로_사용한다() {
+            DocumentCreator markdownCreator = new MarkdownDocumentCreator();
+
+            // createWithMetadata는 DocumentCreator에 정의된 메서드
+            // 새로운 MarkdownDocumentCreator도 이 로직을 그대로 사용
+            Document doc = markdownCreator.createWithMetadata("Content", "Author");
+
+            assertThat(doc.getType()).isEqualTo("Markdown");
+        }
+    }
 }
