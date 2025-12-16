@@ -296,4 +296,30 @@ public class FactoryMethodBasic {
             assertThat(result).contains("[PDF]");
         }
     }
+
+    @Nested
+    class 다형성_활용 {
+
+        @Test
+        void Creator를_다형적으로_사용할_수_있다() {
+            DocumentCreator[] creators = {new PdfDocumentCreator(), new WordDocumentCreator(), new HtmlDocumentCreator()
+            };
+
+            // 클라이언트 코드는 구체적인 Creator 타입을 몰라도 됨
+            for (DocumentCreator creator : creators) {
+                Document doc = creator.createDocument("Test");
+                assertThat(doc.render()).isNotEmpty();
+            }
+        }
+
+        @Test
+        void 런타임에_Creator를_교체할_수_있다() {
+            DocumentCreator creator = new PdfDocumentCreator();
+            assertThat(creator.createDocument("A").getType()).isEqualTo("PDF");
+
+            // 런타임에 다른 Creator로 교체
+            creator = new WordDocumentCreator();
+            assertThat(creator.createDocument("A").getType()).isEqualTo("Word");
+        }
+    }
 }
