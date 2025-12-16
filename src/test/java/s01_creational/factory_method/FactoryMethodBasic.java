@@ -322,4 +322,65 @@ public class FactoryMethodBasic {
             assertThat(creator.createDocument("A").getType()).isEqualTo("Word");
         }
     }
+
+    @Nested
+    class Parameterized_Factory_Method_안티패턴 {
+
+        /**
+         * 안티패턴 예시
+         *
+         * 문제점:
+         * 1. 타입 추가 시 switch문 수정 필요
+         * 2. 타입 추가 시 추상 메서드 추가 필요
+         * 3. 타입 추가 시 모든 서브클래스 수정 필요
+         * → OCP 3중 위반
+         */
+        abstract static class FlexibleDocumentCreator {
+
+            public Document createDocument(String type, String content) {
+                return switch (type) {
+                    case "PDF" -> createPdfDocument(content);
+                    case "Word" -> createWordDocument(content);
+                    default -> createDefaultDocument(content);
+                };
+            }
+
+            // 서브클래스가 각 타입별 생성 방식을 커스터마이징 가능
+            protected abstract Document createPdfDocument(String content);
+
+            protected abstract Document createWordDocument(String content);
+
+            protected abstract Document createDefaultDocument(String content);
+        }
+
+        static class StandardDocumentCreator extends FlexibleDocumentCreator {
+            @Override
+            protected Document createPdfDocument(String content) {
+                return new PdfDocument(content);
+            }
+
+            @Override
+            protected Document createWordDocument(String content) {
+                return new WordDocument(content);
+            }
+
+            @Override
+            protected Document createDefaultDocument(String content) {
+                return new HtmlDocument(content);
+            }
+        }
+
+        @Test
+        void 매개변수로_생성할_타입을_결정할_수_있다() {
+            FlexibleDocumentCreator creator = new StandardDocumentCreator();
+
+            Document pdf = creator.createDocument("PDF", "Content");
+            Document word = creator.createDocument("Word", "Content");
+            Document defaultDoc = creator.createDocument("Unknown", "Content");
+
+            assertThat(pdf.getType()).isEqualTo("PDF");
+            assertThat(word.getType()).isEqualTo("Word");
+            assertThat(defaultDoc.getType()).isEqualTo("HTML");
+        }
+    }
 }
