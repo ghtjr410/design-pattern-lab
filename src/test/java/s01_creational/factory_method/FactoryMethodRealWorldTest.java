@@ -318,4 +318,40 @@ public class FactoryMethodRealWorldTest {
             assertThat(result.channel()).isEqualTo("Push");
         }
     }
+
+    @Nested
+    class 검증_로직_캡슐화 {
+
+        @Test
+        void 잘못된_전화번호는_발송_실패한다() {
+            NotificationService smsService = new SmsNotificationService("010-1234-5678");
+
+            NotificationResult result = smsService.sendNotification("invalid-phone", "메시지");
+
+            assertThat(result.success()).isFalse();
+            assertThat(result.errorMessage()).contains("Invalid phone number");
+        }
+
+        @Test
+        void 잘못된_이메일은_발송_실패한다() {
+            NotificationService emailService = new EmailNotificationService("noreply@shop.com", "smtp.shop.com");
+
+            NotificationResult result = emailService.sendNotification("not-an-email", "메시지");
+
+            assertThat(result.success()).isFalse();
+            assertThat(result.errorMessage()).contains("Invalid email");
+        }
+
+        @Test
+        void 잘못된_디바이스_토큰은_발송_실패한다() {
+            NotificationService pushService = new PushNotificationService("com.shop.app", "api-key");
+
+            NotificationResult result = pushService.sendNotification(
+                    "short-token", // 32자 미만
+                    "메시지");
+
+            assertThat(result.success()).isFalse();
+            assertThat(result.errorMessage()).contains("Invalid device token");
+        }
+    }
 }
