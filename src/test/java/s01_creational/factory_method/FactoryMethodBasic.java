@@ -228,4 +228,72 @@ public class FactoryMethodBasic {
             assertThat(doc.getType()).isEqualTo("Markdown");
         }
     }
+
+    @Nested
+    class 단순_팩토리와의_차이 {
+
+        /**
+         * Simple Factory (단순 팩토리) - 패턴이 아닌 관용구
+         * 조건문으로 객체 생성을 분기 처리
+         */
+        enum DocumentType {
+            PDF,
+            WORD,
+            HTML
+        }
+
+        static class SimpleDocumentFactory {
+            public static Document create(DocumentType type, String content) {
+                return switch (type) {
+                    case PDF -> new PdfDocument(content);
+                    case WORD -> new WordDocument(content);
+                    case HTML -> new HtmlDocument(content);
+                };
+            }
+        }
+
+        @Test
+        void 단순_팩토리는_조건문으로_분기한다() {
+            Document pdf = SimpleDocumentFactory.create(DocumentType.PDF, "Content");
+            Document word = SimpleDocumentFactory.create(DocumentType.WORD, "Content");
+
+            assertThat(pdf.getType()).isEqualTo("PDF");
+            assertThat(word.getType()).isEqualTo("Word");
+        }
+
+        @Test
+        void 단순_팩토리는_새_타입_추가시_기존_코드를_수정해야_한다() {
+            /*
+             * 단순 팩토리의 한계:
+             * - Markdown 타입을 추가하려면 SimpleDocumentFactory의 switch문을 수정해야 함
+             * - OCP 위반: 확장을 위해 기존 코드를 수정
+             *
+             * Factory Method 패턴:
+             * - 새로운 Creator 클래스만 추가하면 됨
+             * - 기존 코드 수정 없음 (OCP 준수)
+             */
+
+            // 단순 팩토리: switch문 수정 필요
+            // Factory Method: 새 클래스 추가만 필요
+
+            DocumentCreator creator = new PdfDocumentCreator();
+            assertThat(creator.createDocument("test")).isInstanceOf(PdfDocument.class);
+        }
+
+        @Test
+        void 팩토리_메서드는_Creator_레벨에서_추가_로직을_가질_수_있다() {
+            /*
+             * Factory Method의 장점:
+             * Creator가 단순히 객체를 생성하는 것을 넘어서
+             * 생성 전후의 추가 로직을 가질 수 있다
+             */
+            DocumentCreator creator = new PdfDocumentCreator();
+
+            // createAndRender는 생성 + 사용을 조합한 로직
+            // 단순 팩토리로는 이런 조합이 어렵다
+            String result = creator.createAndRender("Content");
+
+            assertThat(result).contains("[PDF]");
+        }
+    }
 }
