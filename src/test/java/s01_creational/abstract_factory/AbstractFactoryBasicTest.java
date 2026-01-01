@@ -535,4 +535,88 @@ public class AbstractFactoryBasicTest {
             assertThat(shop.getSetStyle()).isEqualTo("Victorian");
         }
     }
+
+    @Nested
+    class 제품_간_상호작용 {
+
+        /**
+         * 같은 제품군의 제품들은 서로 상호작용할 수 있어야 함
+         */
+        interface Chair2 {
+            String getStyle();
+
+            boolean fitsWithTable(Table2 table); // 테이블과 어울리는지
+        }
+
+        interface Table2 {
+            String getStyle();
+
+            boolean canHoldChairs(int count);
+        }
+
+        static class VictorianChair2 implements Chair2 {
+            @Override
+            public String getStyle() {
+                return "Victorian";
+            }
+
+            @Override
+            public boolean fitsWithTable(Table2 table) {
+                // Victorian 의자는 Victorian 테이블과만 어울림
+                return "Victorian".equals(table.getStyle());
+            }
+        }
+
+        static class VictorianTable2 implements Table2 {
+            @Override
+            public String getStyle() {
+                return "Victorian";
+            }
+
+            @Override
+            public boolean canHoldChairs(int count) {
+                return count <= 6;
+            }
+        }
+
+        static class ModernChair2 implements Chair2 {
+            @Override
+            public String getStyle() {
+                return "Modern";
+            }
+
+            @Override
+            public boolean fitsWithTable(Table2 table) {
+                return "Modern".equals(table.getStyle());
+            }
+        }
+
+        static class ModernTable2 implements Table2 {
+            @Override
+            public String getStyle() {
+                return "Modern";
+            }
+
+            @Override
+            public boolean canHoldChairs(int count) {
+                return count <= 4; // Modern은 더 작음
+            }
+        }
+
+        @Test
+        void 같은_제품군의_제품들은_서로_호환된다() {
+            Chair2 victorianChair = new VictorianChair2();
+            Table2 victorianTable = new VictorianTable2();
+
+            assertThat(victorianChair.fitsWithTable(victorianTable)).isTrue();
+        }
+
+        @Test
+        void 다른_제품군의_제품들은_호환되지_않는다() {
+            Chair2 victorianChair = new VictorianChair2();
+            Table2 modernTable = new ModernTable2();
+
+            assertThat(victorianChair.fitsWithTable(modernTable)).isFalse();
+        }
+    }
 }
