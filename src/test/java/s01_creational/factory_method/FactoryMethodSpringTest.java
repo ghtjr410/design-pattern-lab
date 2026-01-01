@@ -192,4 +192,186 @@ public class FactoryMethodSpringTest {
                     .hasMessageContaining("No bean named");
         }
     }
+
+    @Nested
+    class FactoryBean_패턴 {
+
+        /**
+         * Spring의 FactoryBean<T> 시뮬레이션
+         * 복잡한 객체 생성 로직을 캡슐화
+         */
+        interface FactoryBean<T> {
+            T getObject();
+
+            Class<?> getObjectType();
+
+            default boolean isSingleton() {
+                return true;
+            }
+        }
+
+        /**
+         * 복잡한 설정이 필요한 객체를 생성하는 FactoryBean
+         */
+        static class DataSourceFactoryBean implements FactoryBean<DataSource> {
+            private String url;
+            private String username;
+            private String password;
+            private int poolSize = 10;
+
+            @Override
+            public DataSource getObject() {
+                // 복잡한 DataSource 생성 로직
+                DataSource dataSource = new DataSource();
+                dataSource.setUrl(url);
+                dataSource.setUsername(username);
+                dataSource.setPassword(password);
+                dataSource.setPoolSize(poolSize);
+                dataSource.initialize();
+                return dataSource;
+            }
+
+            @Override
+            public Class<?> getObjectType() {
+                return DataSource.class;
+            }
+
+            // Builder 스타일 설정
+            public DataSourceFactoryBean url(String url) {
+                this.url = url;
+                return this;
+            }
+
+            public DataSourceFactoryBean username(String username) {
+                this.username = username;
+                return this;
+            }
+
+            public DataSourceFactoryBean password(String password) {
+                this.password = password;
+                return this;
+            }
+
+            public DataSourceFactoryBean poolSize(int poolSize) {
+                this.poolSize = poolSize;
+                return this;
+            }
+        }
+
+        static class DataSource {
+            private String url;
+            private String username;
+            private String password;
+            private int poolSize;
+            private boolean initialized;
+
+            void setUrl(String url) {
+                this.url = url;
+            }
+
+            void setUsername(String username) {
+                this.username = username;
+            }
+
+            void setPassword(String password) {
+                this.password = password;
+            }
+
+            void setPoolSize(int poolSize) {
+                this.poolSize = poolSize;
+            }
+
+            void initialize() {
+                this.initialized = true;
+            }
+
+            String getUrl() {
+                return url;
+            }
+
+            int getPoolSize() {
+                return poolSize;
+            }
+
+            boolean isInitialized() {
+                return initialized;
+            }
+        }
+
+        @Test
+        void FactoryBean은_복잡한_생성_로직을_캡슐화한다() {
+            DataSourceFactoryBean factoryBean = new DataSourceFactoryBean()
+                    .url("jdbc:mysql://localhost:3306/test")
+                    .username("root")
+                    .password("password")
+                    .poolSize(20);
+
+            // FactoryBean의 getObject()가 Factory Method
+            DataSource dataSource = factoryBean.getObject();
+
+            assertThat(dataSource.getUrl()).isEqualTo("jdbc:mysql://localhost:3306/test");
+            assertThat(dataSource.getPoolSize()).isEqualTo(20);
+            assertThat(dataSource.isInitialized()).isTrue();
+        }
+
+        /**
+         * FactoryBean을 지원하는 확장된 BeanFactory
+         */
+        static class FactoryBeanAwareBeanFactory extends SimpleBeanFactory {
+            private final Map<String, FactoryBean<?>> factoryBeans = new HashMap<>();
+            private final Map<String, Object> factoryBeanProducts = new ConcurrentHashMap<>();
+
+            public void registerFactoryBean(String name, FactoryBean<?> factoryBean) {
+                factoryBeans.put(name, factoryBean);
+            }
+
+            @Override
+            public Object getBean(String name) {
+                // FactoryBean이 등록되어 있으면 getObject() 결과 반환
+                if (factoryBeans.containsKey(name)) {
+                    FactoryBean<?> factoryBean = factoryBeans.get(name);
+                    if (factoryBean.isSingleton()) {
+                        return factoryBeanProducts.computeIfAbsent(name, k -> factoryBean.getObject());
+                    }
+                    return factoryBean.getObject();
+                }
+                return super.getBean(name);
+            }
+
+            // &name으로 FactoryBean 자체를 가져옴 (Spring 규약)
+            public FactoryBean<?> getFactoryBean(String name) {
+                return factoryBeans.get(name);
+            }
+        }
+
+        @Test
+        void BeanFactory는_FactoryBean의_getObject_결과를_반환한다() {
+            FactoryBeanAwareBeanFactory beanFactory = new FactoryBeanAwareBeanFactory();
+
+            DataSourceFactoryBean factoryBean = new DataSourceFactoryBean()
+                    .url("jdbc:mysql://localhost/db")
+                    .username("user")
+                    .password("pass");
+
+            beanFactory.registerFactoryBean("dataSource", factoryBean);
+
+            // getBean("dataSource")는 DataSource를 반환 (FactoryBean이 아님)
+            Object bean = beanFactory.getBean("dataSource");
+
+            assertThat(bean).isInstanceOf(DataSource.class);
+            assertThat(((DataSource) bean).getUrl()).isEqualTo("jdbc:mysql://localhost/db");
+        }
+
+        @Test
+        void FactoryBean_자체도_조회할_수_있다() {
+            FactoryBeanAwareBeanFactory beanFactory = new FactoryBeanAwareBeanFactory();
+            DataSourceFactoryBean factoryBean = new DataSourceFactoryBean();
+            beanFactory.registerFactoryBean("dataSource", factoryBean);
+
+            // Spring에서는 &dataSource로 FactoryBean 자체를 가져옴
+            FactoryBean<?> retrieved = beanFactory.getFactoryBean("dataSource");
+
+            assertThat(retrieved).isSameAs(factoryBean);
+        }
+    }
 }
