@@ -435,4 +435,48 @@ public class AbstractFactoryBasicTest {
             assertThat(artDecoShop.getSetStyle()).isEqualTo("ArtDeco");
         }
     }
+
+    @Nested
+    class 새로운_제품_타입_추가의_어려움 {
+
+        @Test
+        void 새로운_제품_타입_추가는_모든_팩토리_수정이_필요하다() {
+
+            // 현재 구조에서 Lamp를 추가하려면...
+            // FurnitureFactory 인터페이스 수정 필요
+            // 모든 ConcreteFactory 수정 필요
+
+            /*
+             * Abstract Factory의 단점:
+             *
+             * 만약 "Lamp"라는 새로운 제품을 추가하려면:
+             *
+             * 1. Lamp 인터페이스 정의
+             * 2. VictorianLamp, ModernLamp, ArtDecoLamp 구현
+             * 3. FurnitureFactory에 createLamp() 메서드 추가
+             * 4. 모든 ConcreteFactory(Victorian, Modern, ArtDeco)에 createLamp() 구현
+             *
+             * → 기존 팩토리 코드를 모두 수정해야 함 (OCP 위반)
+             *
+             * 이것이 Abstract Factory의 트레이드오프:
+             * - 새 제품군 추가: 쉬움 (OCP 준수)
+             * - 새 제품 타입 추가: 어려움 (기존 코드 수정 필요)
+             *
+             * ---
+             *
+             * 고찰: 이것은 Abstract Factory만의 단점이 아니다.
+             *
+             * 인터페이스에 메서드를 추가하면 모든 구현체를 수정해야 하는 것은
+             * 인터페이스 자체의 특성이다. (Expression Problem)
+             *
+             * 해결 방법:
+             * - 인터페이스 분리 (ISP): LampFactory를 별도 인터페이스로 분리
+             * - 하이브리드 접근: sealed + switch 조합으로 확장 방향 유연화
+             *
+             * 설계 시 고려할 점:
+             * - 제품군이 자주 추가될 것 같다 → Abstract Factory 적합
+             * - 제품 타입이 자주 추가될 것 같다 → 다른 패턴 또는 인터페이스 분리 고려
+             */
+        }
+    }
 }
