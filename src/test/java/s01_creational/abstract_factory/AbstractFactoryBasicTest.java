@@ -479,4 +479,60 @@ public class AbstractFactoryBasicTest {
              */
         }
     }
+
+    @Nested
+    class 다형성을_활용한_팩토리_선택 {
+
+        /*
+         * 런타임에 팩토리를 선택하는 방법을 보여주는 테스트.
+         *
+         * 주의: 아래 createFactory()의 switch + new 방식은 학습용 예시다.
+         *
+         * 문제점:
+         * - 새로운 스타일 추가 시 switch문 수정 필요 (OCP 위반)
+         * - 구체 클래스를 직접 new하므로 결합도가 높음
+         *
+         * 실무에서 더 나은 방법:
+         * 1. Factory가 자신의 스타일을 반환하게 하고 List + findFirst로 탐색
+         * 2. Map<Style, Factory>에 미리 등록해두고 조회
+         * 3. Spring이면 List<Factory> 자동 주입 + Map으로 변환
+         *
+         * 이렇게 하면 새 Factory 추가 시 기존 코드 수정 없이 확장 가능.
+         */
+
+        enum FurnitureStyle {
+            VICTORIAN,
+            MODERN
+        }
+
+        static FurnitureFactory createFactory(FurnitureStyle style) {
+            return switch (style) {
+                case VICTORIAN -> new VictorianFurnitureFactory();
+                case MODERN -> new ModernFurnitureFactory();
+            };
+        }
+
+        @Test
+        void 런타임에_팩토리를_선택할_수_있다() {
+            FurnitureStyle userChoice = FurnitureStyle.MODERN;
+
+            FurnitureFactory factory = createFactory(userChoice);
+            Chair chair = factory.createChair();
+
+            assertThat(chair.getStyle()).isEqualTo("Modern");
+        }
+
+        @Test
+        void 설정에_따라_다른_제품군을_사용할_수_있다() {
+            // 환경 설정이나 사용자 선호도에 따라 팩토리 선택
+            String config = "VICTORIAN"; // 예: 설정 파일에서 읽어옴
+
+            FurnitureStyle style = FurnitureStyle.valueOf(config);
+            FurnitureFactory factory = createFactory(style);
+
+            FurnitureShop shop = new FurnitureShop(factory);
+
+            assertThat(shop.getSetStyle()).isEqualTo("Victorian");
+        }
+    }
 }
