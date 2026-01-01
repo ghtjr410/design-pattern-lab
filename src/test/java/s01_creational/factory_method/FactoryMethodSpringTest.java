@@ -3,6 +3,10 @@ package s01_creational.factory_method;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
@@ -372,6 +376,101 @@ public class FactoryMethodSpringTest {
             FactoryBean<?> retrieved = beanFactory.getFactoryBean("dataSource");
 
             assertThat(retrieved).isSameAs(factoryBean);
+        }
+    }
+
+    @Nested
+    class Profile에_따른_Bean_선택 {
+
+        /**
+         * @Profile 어노테이션 시뮬레이션
+         */
+        @Target(ElementType.TYPE)
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface Profile {
+            String value();
+        }
+
+        @Profile("production")
+        static class ProductionUserRepository implements UserRepository {
+            @Override
+            public String findById(Long id) {
+                return "Production User: " + id;
+            }
+        }
+
+        @Profile("test")
+        static class TestUserRepository implements UserRepository {
+            @Override
+            public String findById(Long id) {
+                return "Test User: " + id;
+            }
+        }
+
+        /**
+         * Profile 인식 BeanFactory
+         */
+        static class ProfileAwareBeanFactory extends SimpleBeanFactory {
+            private final String activeProfile;
+            private final Map<String, Map<String, BeanDefinition>> profileDefinitions = new HashMap<>();
+
+            ProfileAwareBeanFactory(String activeProfile) {
+                this.activeProfile = activeProfile;
+            }
+
+            public void registerBeanDefinitionForProfile(String beanName, String profile, BeanDefinition definition) {
+                profileDefinitions
+                        .computeIfAbsent(beanName, k -> new HashMap<>())
+                        .put(profile, definition);
+            }
+
+            @Override
+            public Object getBean(String name) {
+                Map<String, BeanDefinition> profiles = profileDefinitions.get(name);
+                if (profiles != null && profiles.containsKey(activeProfile)) {
+                    BeanDefinition definition = profiles.get(activeProfile);
+                    return createBeanFromDefinition(definition);
+                }
+                return super.getBean(name);
+            }
+
+            private Object createBeanFromDefinition(BeanDefinition definition) {
+                try {
+                    return definition.beanClass().getDeclaredConstructor().newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        @Test
+        void Production_프로파일에서는_Production_Bean이_생성된다() {
+            ProfileAwareBeanFactory beanFactory = new ProfileAwareBeanFactory("production");
+
+            beanFactory.registerBeanDefinitionForProfile(
+                    "userRepository", "production", BeanDefinition.singleton(ProductionUserRepository.class));
+            beanFactory.registerBeanDefinitionForProfile(
+                    "userRepository", "test", BeanDefinition.singleton(TestUserRepository.class));
+
+            UserRepository repository = (UserRepository) beanFactory.getBean("userRepository");
+
+            assertThat(repository).isInstanceOf(ProductionUserRepository.class);
+            assertThat(repository.findById(1L)).startsWith("Production");
+        }
+
+        @Test
+        void Test_프로파일에서는_Test_Bean이_생성된다() {
+            ProfileAwareBeanFactory beanFactory = new ProfileAwareBeanFactory("test");
+
+            beanFactory.registerBeanDefinitionForProfile(
+                    "userRepository", "production", BeanDefinition.singleton(ProductionUserRepository.class));
+            beanFactory.registerBeanDefinitionForProfile(
+                    "userRepository", "test", BeanDefinition.singleton(TestUserRepository.class));
+
+            UserRepository repository = (UserRepository) beanFactory.getBean("userRepository");
+
+            assertThat(repository).isInstanceOf(TestUserRepository.class);
+            assertThat(repository.findById(1L)).startsWith("Test");
         }
     }
 }
