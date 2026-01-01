@@ -161,6 +161,19 @@ public class FactoryMethodSpringTest {
         }
     }
 
+    static class InMemoryUserRepository implements UserRepository {
+        private final Map<Long, String> store = new HashMap<>();
+
+        @Override
+        public String findById(Long id) {
+            return store.getOrDefault(id, "Not found: " + id);
+        }
+
+        public void save(Long id, String name) {
+            store.put(id, name);
+        }
+    }
+
     @Nested
     class BeanFactory의_getBean은_Factory_Method다 {
 
@@ -471,6 +484,68 @@ public class FactoryMethodSpringTest {
 
             assertThat(repository).isInstanceOf(TestUserRepository.class);
             assertThat(repository.findById(1L)).startsWith("Test");
+        }
+    }
+
+    @Nested
+    class Factory_Method_패턴이_Spring에서_중요한_이유 {
+
+        @Test
+        void 객체_생성_로직을_중앙에서_관리할_수_있다() {
+            /*
+             * Factory Method 패턴의 Spring 적용 이점:
+             *
+             * 1. 생성 로직 캡슐화
+             *    - new 키워드가 코드 전체에 흩어지지 않음
+             *    - BeanFactory/ApplicationContext가 모든 생성을 담당
+             *
+             * 2. 의존성 관리
+             *    - Bean 간 의존성을 Container가 관리
+             *    - 개발자는 "무엇"이 필요한지만 선언
+             *
+             * 3. 생명주기 관리
+             *    - 객체 생성/소멸을 Container가 관리
+             *    - @PostConstruct, @PreDestroy 등 Hook 제공
+             *
+             * 4. AOP 적용 용이
+             *    - Factory에서 생성 시점에 Proxy 적용 가능
+             *    - 트랜잭션, 로깅 등을 투명하게 적용
+             */
+
+            SimpleBeanFactory beanFactory = new SimpleBeanFactory();
+            beanFactory.registerBeanDefinition("userRepository", BeanDefinition.singleton(JpaUserRepository.class));
+
+            // 클라이언트는 생성 방법을 몰라도 됨
+            UserRepository repository = beanFactory.getBean(UserRepository.class);
+
+            assertThat(repository).isNotNull();
+        }
+
+        @Test
+        void 테스트시_쉽게_Mock으로_교체할_수_있다() {
+            /*
+             * Factory Method를 통한 테스트 용이성:
+             *
+             * Production: JpaUserRepository 등록
+             * Test: InMemoryUserRepository 등록
+             *
+             * 클라이언트 코드 변경 없이 구현체 교체 가능
+             */
+
+            // Production 설정
+            SimpleBeanFactory prodFactory = new SimpleBeanFactory();
+            prodFactory.registerBeanDefinition("userRepository", BeanDefinition.singleton(JpaUserRepository.class));
+
+            // Test 설정
+            SimpleBeanFactory testFactory = new SimpleBeanFactory();
+            testFactory.registerBeanDefinition(
+                    "userRepository", BeanDefinition.singleton(InMemoryUserRepository.class));
+
+            UserRepository prodRepo = prodFactory.getBean(UserRepository.class);
+            UserRepository testRepo = testFactory.getBean(UserRepository.class);
+
+            assertThat(prodRepo).isInstanceOf(JpaUserRepository.class);
+            assertThat(testRepo).isInstanceOf(InMemoryUserRepository.class);
         }
     }
 }
