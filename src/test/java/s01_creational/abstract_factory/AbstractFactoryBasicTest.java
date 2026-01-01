@@ -210,6 +210,37 @@ public class AbstractFactoryBasicTest {
         }
     }
 
+    /**
+     * 클라이언트 코드: 팩토리를 통해 제품군을 사용
+     * 구체적인 제품 클래스를 알 필요 없음
+     */
+    static class FurnitureShop {
+        private final Chair chair;
+        private final Table table;
+        private final Sofa sofa;
+
+        FurnitureShop(FurnitureFactory factory) {
+            // 팩토리에서 제품군을 받아옴
+            this.chair = factory.createChair();
+            this.table = factory.createTable();
+            this.sofa = factory.createSofa();
+        }
+
+        String getSetStyle() {
+            // 세트의 일관성 확인
+            if (chair.getStyle().equals(table.getStyle()) && table.getStyle().equals(sofa.getStyle())) {
+                return chair.getStyle();
+            }
+            return "Mismatched";
+        }
+
+        String describe() {
+            return String.format(
+                    "%s furniture set: chair(legs=%s), table(%d legs), sofa(%d seats)",
+                    getSetStyle(), chair.hasLegs(), table.getNumberOfLegs(), sofa.getSeats());
+        }
+    }
+
     @Nested
     class Abstract_Factory_핵심_구조 {
 
@@ -259,38 +290,6 @@ public class AbstractFactoryBasicTest {
     @Nested
     class 제품군_일관성_보장 {
 
-        /**
-         * 클라이언트 코드: 팩토리를 통해 제품군을 사용
-         * 구체적인 제품 클래스를 알 필요 없음
-         */
-        static class FurnitureShop {
-            private final Chair chair;
-            private final Table table;
-            private final Sofa sofa;
-
-            FurnitureShop(FurnitureFactory factory) {
-                // 팩토리에서 제품군을 받아옴
-                this.chair = factory.createChair();
-                this.table = factory.createTable();
-                this.sofa = factory.createSofa();
-            }
-
-            String getSetStyle() {
-                // 세트의 일관성 확인
-                if (chair.getStyle().equals(table.getStyle())
-                        && table.getStyle().equals(sofa.getStyle())) {
-                    return chair.getStyle();
-                }
-                return "Mismatched";
-            }
-
-            String describe() {
-                return String.format(
-                        "%s furniture set: chair(legs=%s), table(%d legs), sofa(%d seats)",
-                        getSetStyle(), chair.hasLegs(), table.getNumberOfLegs(), sofa.getSeats());
-            }
-        }
-
         @Test
         void 클라이언트는_팩토리만_알면_된다() {
             // 클라이언트는 구체적인 제품 클래스를 모름
@@ -336,6 +335,104 @@ public class AbstractFactoryBasicTest {
             // 같은 팩토리에서 나온 제품은 항상 같은 스타일
             // 런타임 체크 불필요
             assertThat(chair.getStyle()).isEqualTo(table.getStyle());
+        }
+    }
+
+    @Nested
+    class 새로운_제품군_추가_OCP {
+
+        // ===== 새로운 제품군: ArtDeco 스타일 =====
+
+        static class ArtDecoChair implements Chair {
+            @Override
+            public String getStyle() {
+                return "ArtDeco";
+            }
+
+            @Override
+            public boolean hasLegs() {
+                return true;
+            }
+
+            @Override
+            public void sitOn() {
+                System.out.println("Sitting on a geometric ArtDeco chair");
+            }
+        }
+
+        static class ArtDecoTable implements Table {
+            @Override
+            public String getStyle() {
+                return "ArtDeco";
+            }
+
+            @Override
+            public int getNumberOfLegs() {
+                return 3; // ArtDeco는 삼각형 베이스
+            }
+
+            @Override
+            public void putItem(String item) {
+                System.out.println("Putting " + item + " on geometric ArtDeco table");
+            }
+        }
+
+        static class ArtDecoSofa implements Sofa {
+            @Override
+            public String getStyle() {
+                return "ArtDeco";
+            }
+
+            @Override
+            public int getSeats() {
+                return 4;
+            }
+
+            @Override
+            public void lieOn() {
+                System.out.println("Lying on a glamorous ArtDeco sofa");
+            }
+        }
+
+        // 새로운 팩토리 추가 - 기존 코드 수정 없음
+        static class ArtDecoFurnitureFactory implements FurnitureFactory {
+            @Override
+            public Chair createChair() {
+                return new ArtDecoChair();
+            }
+
+            @Override
+            public Table createTable() {
+                return new ArtDecoTable();
+            }
+
+            @Override
+            public Sofa createSofa() {
+                return new ArtDecoSofa();
+            }
+        }
+
+        @Test
+        void 새로운_제품군을_기존_코드_수정_없이_추가할_수_있다() {
+            // 기존 Victorian, Modern 팩토리는 전혀 수정하지 않음
+            FurnitureFactory artDecoFactory = new ArtDecoFurnitureFactory();
+
+            Chair chair = artDecoFactory.createChair();
+            Table table = artDecoFactory.createTable();
+            Sofa sofa = artDecoFactory.createSofa();
+
+            assertThat(chair.getStyle()).isEqualTo("ArtDeco");
+            assertThat(table.getStyle()).isEqualTo("ArtDeco");
+            assertThat(sofa.getStyle()).isEqualTo("ArtDeco");
+        }
+
+        @Test
+        void 새로운_제품군도_기존_클라이언트_코드와_호환된다() {
+            // FurnitureShop은 FurnitureFactory 인터페이스만 의존
+            // ArtDecoFurnitureFactory도 같은 인터페이스 구현
+            FurnitureShop artDecoShop = new FurnitureShop(new ArtDecoFurnitureFactory());
+
+            assertThat(artDecoShop.getSetStyle()).isEqualTo("ArtDeco");
         }
     }
 }
