@@ -255,4 +255,87 @@ public class AbstractFactoryBasicTest {
             assertThat(table.getNumberOfLegs()).isEqualTo(4); // 4개 다리
         }
     }
+
+    @Nested
+    class 제품군_일관성_보장 {
+
+        /**
+         * 클라이언트 코드: 팩토리를 통해 제품군을 사용
+         * 구체적인 제품 클래스를 알 필요 없음
+         */
+        static class FurnitureShop {
+            private final Chair chair;
+            private final Table table;
+            private final Sofa sofa;
+
+            FurnitureShop(FurnitureFactory factory) {
+                // 팩토리에서 제품군을 받아옴
+                this.chair = factory.createChair();
+                this.table = factory.createTable();
+                this.sofa = factory.createSofa();
+            }
+
+            String getSetStyle() {
+                // 세트의 일관성 확인
+                if (chair.getStyle().equals(table.getStyle())
+                        && table.getStyle().equals(sofa.getStyle())) {
+                    return chair.getStyle();
+                }
+                return "Mismatched";
+            }
+
+            String describe() {
+                return String.format(
+                        "%s furniture set: chair(legs=%s), table(%d legs), sofa(%d seats)",
+                        getSetStyle(), chair.hasLegs(), table.getNumberOfLegs(), sofa.getSeats());
+            }
+        }
+
+        @Test
+        void 클라이언트는_팩토리만_알면_된다() {
+            // 클라이언트는 구체적인 제품 클래스를 모름
+            // FurnitureFactory 인터페이스만 의존
+            FurnitureShop victorianShop = new FurnitureShop(new VictorianFurnitureFactory());
+            FurnitureShop modernShop = new FurnitureShop(new ModernFurnitureFactory());
+
+            assertThat(victorianShop.getSetStyle()).isEqualTo("Victorian");
+            assertThat(modernShop.getSetStyle()).isEqualTo("Modern");
+        }
+
+        @Test
+        void 팩토리_교체만으로_전체_제품군이_바뀐다() {
+            FurnitureFactory factory = new VictorianFurnitureFactory();
+            FurnitureShop shop = new FurnitureShop(factory);
+
+            assertThat(shop.getSetStyle()).isEqualTo("Victorian");
+            assertThat(shop.describe()).contains("Victorian");
+
+            // 팩토리만 교체하면 전체 제품군이 바뀜
+            factory = new ModernFurnitureFactory();
+            shop = new FurnitureShop(factory);
+
+            assertThat(shop.getSetStyle()).isEqualTo("Modern");
+            assertThat(shop.describe()).contains("Modern");
+        }
+
+        @Test
+        void 제품군_일관성은_컴파일_타임에_보장된다() {
+            /*
+             * Abstract Factory의 핵심 장점:
+             * - Victorian 팩토리는 Victorian 제품만 생성 가능
+             * - Modern 팩토리는 Modern 제품만 생성 가능
+             * - 잘못된 조합(Victorian Chair + Modern Table)이 불가능
+             *
+             * 컴파일 타임에 타입 시스템으로 보장됨
+             */
+            FurnitureFactory victorianFactory = new VictorianFurnitureFactory();
+
+            Chair chair = victorianFactory.createChair();
+            Table table = victorianFactory.createTable();
+
+            // 같은 팩토리에서 나온 제품은 항상 같은 스타일
+            // 런타임 체크 불필요
+            assertThat(chair.getStyle()).isEqualTo(table.getStyle());
+        }
+    }
 }
