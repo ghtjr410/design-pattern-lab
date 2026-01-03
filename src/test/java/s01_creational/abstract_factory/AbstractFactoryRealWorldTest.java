@@ -21,6 +21,10 @@ import org.junit.jupiter.api.Test;
  * 1. 테마 변경 시 모든 컴포넌트가 일관되게 변경
  * 2. 새로운 테마 추가가 용이 (OCP 준수)
  * 3. 컴포넌트 간 스타일 일관성 보장
+ *
+ * 팩토리가 클라이언트에게 하는 약속:
+ * "나한테서 나온 것들은 무조건 세트야.
+ *  니가 신경 안 써도 돼. 내가 보장할게."
  */
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class AbstractFactoryRealWorldTest {
@@ -401,6 +405,78 @@ public class AbstractFactoryRealWorldTest {
             // Dark 테마는 어두운 배경
             assertThat(darkButtonHtml).contains("background: #333333");
             assertThat(darkButtonHtml).contains("color: #ffffff");
+        }
+    }
+
+    @Nested
+    class 로그인_폼_구성_시나리오 {
+
+        /**
+         * 실무 시나리오: 로그인 폼을 테마에 맞게 구성
+         */
+        static class LoginForm {
+            private final TextField usernameField;
+            private final TextField passwordField;
+            private final Checkbox rememberMeCheckbox;
+            private final Button loginButton;
+            private final Panel panel;
+
+            LoginForm(UIFactory factory) {
+                this.panel = factory.createPanel();
+                this.usernameField = factory.createTextField("Username");
+                this.passwordField = factory.createTextField("Password");
+                this.rememberMeCheckbox = factory.createCheckbox("Remember me");
+                this.loginButton = factory.createButton("Login");
+
+                // 패널에 컴포넌트 추가
+                panel.addComponent(usernameField.render());
+                panel.addComponent(passwordField.render());
+                panel.addComponent(rememberMeCheckbox.render());
+                panel.addComponent(loginButton.render());
+            }
+
+            String getTheme() {
+                return panel.getTheme();
+            }
+
+            String render() {
+                return panel.render();
+            }
+
+            void setUsername(String username) {
+                usernameField.setValue(username);
+            }
+
+            void setRememberMe(boolean remember) {
+                rememberMeCheckbox.setChecked(remember);
+            }
+        }
+
+        @Test
+        void 팩토리만_교체하면_전체_폼의_테마가_바뀐다() {
+            LoginForm lightForm = new LoginForm(new LightThemeFactory());
+            LoginForm darkForm = new LoginForm(new DarkThemeFactory());
+
+            assertThat(lightForm.getTheme()).isEqualTo("Light");
+            assertThat(darkForm.getTheme()).isEqualTo("Dark");
+
+            // Light 폼은 밝은 배경
+            assertThat(lightForm.render()).contains("background: #f5f5f5");
+
+            // Dark 폼은 어두운 배경
+            assertThat(darkForm.render()).contains("background: #1a1a1a");
+        }
+
+        @Test
+        void 폼_내_모든_컴포넌트가_일관된_테마를_가진다() {
+            LoginForm form = new LoginForm(new DarkThemeFactory());
+
+            String rendered = form.render();
+
+            // 모든 컴포넌트가 Dark 테마 스타일
+            assertThat(rendered).contains("background: #1a1a1a"); // Panel
+            assertThat(rendered).contains("background: #2d2d2d"); // TextField
+            assertThat(rendered).contains("accent-color: #66b3ff"); // Checkbox
         }
     }
 }
