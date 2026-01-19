@@ -646,4 +646,55 @@ public class AbstractFactoryRealWorldTest {
             assertThat(accessibleForm.render()).contains("border: 3px solid");
         }
     }
+
+    @Nested
+    class 테마_전환_시나리오 {
+        // 런타임에 테마 전환
+        static class ThemeManager {
+            private UIFactory currentFactory;
+
+            ThemeManager(UIFactory initialFactory) {
+                this.currentFactory = initialFactory;
+            }
+
+            void switchTheme(UIFactory newFactory) {
+                this.currentFactory = newFactory;
+            }
+
+            UIFactory getCurrentFactory() {
+                return currentFactory;
+            }
+
+            String getCurrentTheme() {
+                return currentFactory.getThemeName();
+            }
+        }
+
+        @Test
+        void 런타임에_테마를_전환할_수_있다() {
+            ThemeManager manager = new ThemeManager(new LightThemeFactory());
+            assertThat(manager.getCurrentTheme()).isEqualTo("Light");
+
+            // 테마 전환
+            manager.switchTheme(new DarkThemeFactory());
+            assertThat(manager.getCurrentTheme()).isEqualTo("Dark");
+
+            // 새 팩토리로 컴포넌트 생성
+            Button button = manager.getCurrentFactory().createButton("Test");
+            assertThat(button.getTheme()).isEqualTo("Dark");
+        }
+
+        @Test
+        void 시스템_설정에_따라_테마를_선택할_수_있다() {
+            // 상황 설정: 시스템 시간에 따라 테마 선택
+            boolean isDarkModeTime = java.time.LocalTime.now().getHour() >= 18;
+
+            UIFactory factory = isDarkModeTime ? new DarkThemeFactory() : new LightThemeFactory();
+
+            Button button = factory.createButton("Auto Theme");
+
+            // 시간에 따라 적절한 테마 적용
+            assertThat(button.getTheme()).isIn("Light", "Dark");
+        }
+    }
 }
