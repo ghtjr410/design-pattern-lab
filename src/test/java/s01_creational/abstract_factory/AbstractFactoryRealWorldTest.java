@@ -1,6 +1,7 @@
 package s01_creational.abstract_factory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static s01_creational.abstract_factory.AbstractFactoryRealWorldTest.로그인_폼_구성_시나리오.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -477,6 +478,172 @@ public class AbstractFactoryRealWorldTest {
             assertThat(rendered).contains("background: #1a1a1a"); // Panel
             assertThat(rendered).contains("background: #2d2d2d"); // TextField
             assertThat(rendered).contains("accent-color: #66b3ff"); // Checkbox
+        }
+    }
+
+    @Nested
+    class 새로운_테마_추가_OCP {
+
+        // 새로운 테마: High Contrast
+
+        static class HighContrastButton implements Button {
+            private final String label;
+
+            HighContrastButton(String label) {
+                this.label = label;
+            }
+
+            @Override
+            public String getTheme() {
+                return "HighContrast";
+            }
+
+            @Override
+            public String render() {
+                return String.format(
+                        "<button style=\"background: #000000; color: #ffff00; border: 3px solid #ffff00; font-weight: bold\">%s</button>",
+                        label);
+            }
+
+            @Override
+            public void onClick(Runnable action) {
+                if (action != null) action.run();
+            }
+        }
+
+        static class HighContrastCheckbox implements Checkbox {
+            private final String label;
+            private boolean checked;
+
+            HighContrastCheckbox(String label) {
+                this.label = label;
+            }
+
+            @Override
+            public String getTheme() {
+                return "HighContrast";
+            }
+
+            @Override
+            public String render() {
+                String checkmark = checked ? "✓" : "○";
+                return String.format(
+                        "<checkbox style=\"color: #ffff00; font-size: 24px\">[%s] %s</checkbox>", checkmark, label);
+            }
+
+            @Override
+            public boolean isChecked() {
+                return checked;
+            }
+
+            @Override
+            public void setChecked(boolean checked) {
+                this.checked = checked;
+            }
+        }
+
+        static class HighContrastTextField implements TextField {
+            private final String placeholder;
+            private String value = "";
+
+            HighContrastTextField(String placeholder) {
+                this.placeholder = placeholder;
+            }
+
+            @Override
+            public String getTheme() {
+                return "HighContrast";
+            }
+
+            @Override
+            public String render() {
+                return String.format(
+                        "<input style=\"background: #000000; color: #ffff00; border: 3px solid #ffff00\" placeholder=\"%s\" value=\"%s\"/>",
+                        placeholder, value);
+            }
+
+            @Override
+            public String getValue() {
+                return value;
+            }
+
+            @Override
+            public void setValue(String value) {
+                this.value = value;
+            }
+        }
+
+        static class HighContrastPanel implements Panel {
+            private final List<String> components = new ArrayList<>();
+
+            @Override
+            public String getTheme() {
+                return "HighContrast";
+            }
+
+            @Override
+            public String render() {
+                return String.format(
+                        "<div style=\"background: #000000; padding: 20px; border: 3px solid #ffffff\">%s</div>",
+                        String.join("\n", components));
+            }
+
+            @Override
+            public void addComponent(String component) {
+                components.add(component);
+            }
+
+            @Override
+            public List<String> getComponents() {
+                return List.copyOf(components);
+            }
+        }
+
+        static class HighContrastThemeFactory implements UIFactory {
+            @Override
+            public Button createButton(String label) {
+                return new HighContrastButton(label);
+            }
+
+            @Override
+            public Checkbox createCheckbox(String label) {
+                return new HighContrastCheckbox(label);
+            }
+
+            @Override
+            public TextField createTextField(String placeholder) {
+                return new HighContrastTextField(placeholder);
+            }
+
+            @Override
+            public Panel createPanel() {
+                return new HighContrastPanel();
+            }
+        }
+
+        @Test
+        void 새로운_테마를_기존_코드_수정_없이_추가할_수_있다() {
+            // 기존 Light, Dark 팩토리는 전혀 수정하지 않음
+            UIFactory highContrastFactory = new HighContrastThemeFactory();
+
+            Button button = highContrastFactory.createButton("Accept");
+            Checkbox checkbox = highContrastFactory.createCheckbox("I agree");
+
+            assertThat(button.getTheme()).isEqualTo("HighContrast");
+            assertThat(checkbox.getTheme()).isEqualTo("HighContrast");
+
+            // High Contrast 스타일 적용 확인
+            assertThat(button.render()).contains("background: #000000");
+            assertThat(button.render()).contains("color: #ffff00");
+        }
+
+        @Test
+        void 새_테마도_기존_클라이언트_코드와_호환된다() {
+            // LoginForm은 UIFactory만 의존
+            LoginForm accessibleForm = new LoginForm(new HighContrastThemeFactory());
+
+            assertThat(accessibleForm.getTheme()).isEqualTo("HighContrast");
+            assertThat(accessibleForm.render()).contains("border: 3px solid");
         }
     }
 }
