@@ -750,4 +750,65 @@ public class AbstractFactoryRealWorldTest {
             assertThat(darkFactory.getThemeName()).isEqualTo("Dark");
         }
     }
+
+    @Nested
+    class 테스트_용이성 {
+
+        /**
+         * 테스트를 위한 Mock 팩토리
+         */
+        static class TestUIFactory implements UIFactory {
+            private int buttonCount = 0;
+            private int checkboxCount = 0;
+            private int textFieldCount = 0;
+
+            @Override
+            public Button createButton(String label) {
+                buttonCount++;
+                return new LightButton(label); // 간단히 Light 재사용
+            }
+
+            @Override
+            public Checkbox createCheckbox(String label) {
+                checkboxCount++;
+                return new LightCheckbox(label);
+            }
+
+            @Override
+            public TextField createTextField(String placeholder) {
+                textFieldCount++;
+                return new LightTextField(placeholder);
+            }
+
+            @Override
+            public Panel createPanel() {
+                return new LightPanel();
+            }
+
+            // 테스트 검증용 메서드
+            int getButtonCount() {
+                return buttonCount;
+            }
+
+            int getCheckboxCount() {
+                return checkboxCount;
+            }
+
+            int getTextFieldCount() {
+                return textFieldCount;
+            }
+        }
+
+        @Test
+        void Mock_팩토리로_컴포넌트_생성_횟수를_검증할_수_있다() {
+            TestUIFactory testFactory = new TestUIFactory();
+
+            // LoginForm이 어떤 컴포넌트를 몇 개 생성하는지 검증
+            LoginForm form = new LoginForm(testFactory);
+
+            assertThat(testFactory.getButtonCount()).isEqualTo(1);
+            assertThat(testFactory.getCheckboxCount()).isEqualTo(1);
+            assertThat(testFactory.getTextFieldCount()).isEqualTo(2);
+        }
+    }
 }
