@@ -697,4 +697,57 @@ public class AbstractFactoryRealWorldTest {
             assertThat(button.getTheme()).isIn("Light", "Dark");
         }
     }
+
+    @Nested
+    class 크로스_플랫폼_시나리오 {
+
+        /**
+         * 확장: 플랫폼별 + 테마별 제품군
+         * Web Light, Web Dark, Mobile Light, Mobile Dark...
+         *
+         * 이 경우 Abstract Factory를 계층화할 수 있음
+         */
+        interface PlatformUIFactory {
+            UIFactory createLightTheme();
+
+            UIFactory createDarkTheme();
+        }
+
+        static class WebPlatformFactory implements PlatformUIFactory {
+            @Override
+            public UIFactory createLightTheme() {
+                return new LightThemeFactory();
+            }
+
+            @Override
+            public UIFactory createDarkTheme() {
+                return new DarkThemeFactory();
+            }
+        }
+
+        // Mobile은 다른 스타일의 컴포넌트를 생성할 수 있음
+        static class MobilePlatformFactory implements PlatformUIFactory {
+            @Override
+            public UIFactory createLightTheme() {
+                // 실제로는 MobileLightThemeFactory 반환
+                return new LightThemeFactory(); // 간단히 재사용
+            }
+
+            @Override
+            public UIFactory createDarkTheme() {
+                return new DarkThemeFactory();
+            }
+        }
+
+        @Test
+        void 플랫폼과_테마_조합으로_팩토리를_선택할_수_있다() {
+            PlatformUIFactory platformFactory = new WebPlatformFactory();
+
+            UIFactory lightFactory = platformFactory.createLightTheme();
+            UIFactory darkFactory = platformFactory.createDarkTheme();
+
+            assertThat(lightFactory.getThemeName()).isEqualTo("Light");
+            assertThat(darkFactory.getThemeName()).isEqualTo("Dark");
+        }
+    }
 }
