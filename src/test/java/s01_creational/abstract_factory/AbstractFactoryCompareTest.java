@@ -550,4 +550,86 @@ public class AbstractFactoryCompareTest {
             assertThat(result).contains("Hello World");
         }
     }
+
+    @Nested
+    class 실무_선택_가이드 {
+
+        @Test
+        void 단일_객체_생성_후_처리_로직이_있으면_Factory_Method() {
+            /*
+             * Factory Method 선택 상황:
+             *
+             * 1. 생성할 객체가 하나뿐
+             * 2. 객체 생성 후 공통 처리 로직이 있음 (Template Method와 결합)
+             * 3. Creator가 비즈니스 로직의 주체
+             *
+             * 예시:
+             * - DocumentExporter: 문서 생성 + 내보내기
+             * - NotificationService: 알림 생성 + 발송
+             * - ReportGenerator: 리포트 생성 + 포맷팅
+             */
+
+            DocumentExporter exporter = new PdfExporter();
+            String result = exporter.export("Report");
+
+            // Creator가 생성 + 처리를 모두 담당
+            assertThat(result).contains("=== PDF Export ===");
+            assertThat(result).contains("[PDF]");
+            assertThat(result).contains("=== End ===");
+        }
+
+        @Test
+        void 관련_객체들의_일관성이_중요하면_Abstract_Factory() {
+            /*
+             * Abstract Factory 선택 상황:
+             *
+             * 1. 여러 관련 객체가 함께 사용됨
+             * 2. 객체들 간의 일관성이 중요 (같은 테마, 같은 포맷 등)
+             * 3. 제품군 전환이 자주 발생
+             *
+             * 예시:
+             * - UI 테마: Button + Checkbox + TextField (같은 테마)
+             * - 문서 스위트: Document + Editor + Viewer (같은 포맷)
+             * - DB 연결: Connection + Statement + ResultSet (같은 벤더)
+             */
+
+            DocumentSuiteFactory factory = new PdfSuiteFactory();
+
+            DocSuiteDocument doc = factory.createDocument();
+            DocSuiteEditor editor = factory.createEditor();
+            DocSuiteViewer viewer = factory.createViewer();
+
+            // 제품군 일관성 보장
+            assertThat(doc.getFormat()).isEqualTo(editor.getFormat());
+            assertThat(editor.getFormat()).isEqualTo(viewer.getFormat());
+        }
+
+        @Test
+        void 두_패턴을_함께_사용할_수도_있다() {
+            /*
+             * 복합 사용 예시:
+             *
+             * Abstract Factory로 제품군 생성
+             * + Factory Method로 각 제품의 생성 로직 캡슐화
+             *
+             * AbstractFactory
+             *   └── createProductA() ← 내부적으로 Factory Method 사용 가능
+             *   └── createProductB()
+             */
+
+            // Abstract Factory 내부에서 Factory Method 사용
+            abstract class ConfigurableFactory implements DocumentSuiteFactory {
+                // Factory Method - 서브클래스가 구현
+                protected abstract DocSuiteDocument doCreateDocument();
+
+                @Override
+                public DocSuiteDocument createDocument() {
+                    DocSuiteDocument doc = doCreateDocument();
+                    // 공통 초기화 로직
+                    doc.setContent("");
+                    return doc;
+                }
+            }
+        }
+    }
 }
