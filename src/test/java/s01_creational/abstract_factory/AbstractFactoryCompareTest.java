@@ -314,4 +314,69 @@ public class AbstractFactoryCompareTest {
             assertThat(viewer.getFormat()).isEqualTo("PDF");
         }
     }
+
+    @Nested
+    class 구조적_차이 {
+
+        @Test
+        void Factory_Method는_상속_기반이다() {
+            /*
+             * Factory Method 구조:
+             *
+             * DocumentExporter (abstract)
+             *   └── createDocument() : abstract  ← Factory Method
+             *   └── export()         : concrete  ← Template Method (생성 후 로직)
+             *         │
+             *         ├── PdfExporter
+             *         │     └── createDocument() → new PdfDocument()
+             *         │
+             *         └── HtmlExporter
+             *               └── createDocument() → new HtmlDocument()
+             *
+             * 특징:
+             * - Creator(DocumentExporter)가 추상 클래스
+             * - 서브클래스가 생성 방식을 결정
+             * - Creator가 생성 후 처리 로직(export)을 가짐
+             */
+
+            // 서브클래스 타입으로 인스턴스화
+            DocumentExporter pdfExporter = new PdfExporter();
+            DocumentExporter htmlExporter = new HtmlExporter();
+
+            // 같은 export() 메서드지만 다른 Document 생성
+            assertThat(pdfExporter.export("test")).contains("[PDF]");
+            assertThat(htmlExporter.export("test")).contains("<html>");
+        }
+
+        @Test
+        void Abstract_Factory는_조합_기반이다() {
+            /*
+             * Abstract Factory 구조:
+             *
+             * DocumentSuiteFactory (interface)
+             *   └── createDocument()
+             *   └── createEditor()
+             *   └── createViewer()
+             *         │
+             *         ├── PdfSuiteFactory → PdfDocument, PdfEditor, PdfViewer
+             *         │
+             *         └── HtmlSuiteFactory → HtmlDocument, HtmlEditor, HtmlViewer
+             *
+             * 특징:
+             * - Factory가 인터페이스 (또는 추상 클래스)
+             * - 제품군 전체를 생성하는 메서드들
+             * - 클라이언트가 Factory를 조합하여 사용
+             */
+
+            // 인터페이스 타입으로 사용
+            DocumentSuiteFactory factory = new PdfSuiteFactory();
+
+            // Factory를 클라이언트에 주입하여 사용
+            DocSuiteDocument doc = factory.createDocument();
+            DocSuiteEditor editor = factory.createEditor();
+
+            editor.edit(doc, "Hello");
+            assertThat(doc.getContent()).isEqualTo("Hello");
+        }
+    }
 }
