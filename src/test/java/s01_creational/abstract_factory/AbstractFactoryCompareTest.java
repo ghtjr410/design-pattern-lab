@@ -379,4 +379,144 @@ public class AbstractFactoryCompareTest {
             assertThat(doc.getContent()).isEqualTo("Hello");
         }
     }
+
+    @Nested
+    class 확장_방식의_차이 {
+
+        @Test
+        void Factory_Method에서_새_제품_추가는_새_서브클래스_생성() {
+            /*
+             * Markdown Document 추가:
+             *
+             * 1. MarkdownDocument implements Document
+             * 2. MarkdownExporter extends DocumentExporter
+             *    └── createDocument() → new MarkdownDocument()
+             *
+             * 기존 코드 수정 없음 (OCP 준수)
+             */
+
+            // 새 제품 타입
+            class MarkdownDocument implements Document {
+                @Override
+                public String getFormat() {
+                    return "MD";
+                }
+
+                @Override
+                public String render(String content) {
+                    return "# " + content;
+                }
+            }
+
+            // 새 Creator
+            class MarkdownExporter extends DocumentExporter {
+                @Override
+                protected Document createDocument() {
+                    return new MarkdownDocument();
+                }
+            }
+
+            DocumentExporter mdExporter = new MarkdownExporter();
+            assertThat(mdExporter.export("Title")).contains("# Title");
+        }
+
+        @Test
+        void Abstract_Factory에서_새_제품군_추가는_새_Factory_생성() {
+            /*
+             * Markdown Suite 추가:
+             *
+             * 1. MarkdownDocument, MarkdownEditor, MarkdownViewer 구현
+             * 2. MarkdownSuiteFactory implements DocumentSuiteFactory
+             *
+             * 기존 코드 수정 없음 (OCP 준수)
+             */
+
+            // 새 제품군 (간단히 구현)
+            class MarkdownSuiteFactory implements DocumentSuiteFactory {
+                @Override
+                public DocSuiteDocument createDocument() {
+                    return new DocSuiteDocument() {
+                        private String content = "";
+
+                        @Override
+                        public String getFormat() {
+                            return "Markdown";
+                        }
+
+                        @Override
+                        public String getContent() {
+                            return content;
+                        }
+
+                        @Override
+                        public void setContent(String content) {
+                            this.content = content;
+                        }
+                    };
+                }
+
+                @Override
+                public DocSuiteEditor createEditor() {
+                    return new DocSuiteEditor() {
+                        @Override
+                        public String getFormat() {
+                            return "Markdown";
+                        }
+
+                        @Override
+                        public void edit(DocSuiteDocument document, String newContent) {
+                            document.setContent("# " + newContent);
+                        }
+
+                        @Override
+                        public String getEditorName() {
+                            return "Typora";
+                        }
+                    };
+                }
+
+                @Override
+                public DocSuiteViewer createViewer() {
+                    return new DocSuiteViewer() {
+                        @Override
+                        public String getFormat() {
+                            return "Markdown";
+                        }
+
+                        @Override
+                        public String view(DocSuiteDocument document) {
+                            return "[MD Preview] " + document.getContent();
+                        }
+
+                        @Override
+                        public String getViewerName() {
+                            return "Markdown Preview";
+                        }
+                    };
+                }
+            }
+
+            DocumentSuiteFactory mdFactory = new MarkdownSuiteFactory();
+            assertThat(mdFactory.createDocument().getFormat()).isEqualTo("Markdown");
+            assertThat(mdFactory.createEditor().getEditorName()).isEqualTo("Typora");
+        }
+
+        @Test
+        void Abstract_Factory에서_새_제품_타입_추가는_모든_Factory_수정_필요() {
+            /*
+             * Abstract Factory의 단점:
+             *
+             * DocumentSuiteFactory에 createPrinter() 추가하려면:
+             *
+             * 1. DocSuitePrinter 인터페이스 정의
+             * 2. DocumentSuiteFactory에 createPrinter() 메서드 추가 ← 인터페이스 수정!
+             * 3. PdfSuiteFactory에 createPrinter() 구현 ← 구현체 수정!
+             * 4. HtmlSuiteFactory에 createPrinter() 구현 ← 구현체 수정!
+             *
+             * → 모든 Factory 수정 필요 (OCP 위반)
+             */
+
+            // 이것이 Abstract Factory의 트레이드오프
+        }
+    }
 }
