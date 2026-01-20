@@ -519,4 +519,35 @@ public class AbstractFactoryCompareTest {
             // 이것이 Abstract Factory의 트레이드오프
         }
     }
+
+    @Nested
+    class 클라이언트_코드_차이 {
+
+        @Test
+        void Factory_Method_클라이언트는_Creator를_사용한다() {
+            // 클라이언트는 Creator(Exporter)의 메서드를 호출
+            DocumentExporter exporter = new PdfExporter();
+
+            // Creator가 제공하는 비즈니스 메서드 사용
+            String result = exporter.export("Content");
+
+            assertThat(result).contains("PDF Export");
+        }
+
+        @Test
+        void Abstract_Factory_클라이언트는_Factory에서_제품을_받아_사용한다() {
+            // 클라이언트가 직접 제품을 받아서 조합
+            DocumentSuiteFactory factory = new HtmlSuiteFactory();
+
+            DocSuiteDocument doc = factory.createDocument();
+            DocSuiteEditor editor = factory.createEditor();
+            DocSuiteViewer viewer = factory.createViewer();
+
+            // 클라이언트가 제품들을 조합하여 사용
+            editor.edit(doc, "Hello World");
+            String result = viewer.view(doc);
+
+            assertThat(result).contains("Hello World");
+        }
+    }
 }
