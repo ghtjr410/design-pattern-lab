@@ -2,6 +2,11 @@ package s01_creational.singleton;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;
@@ -51,6 +56,31 @@ public class SingletonBasicTest {
 
         public static EagerSingleton getInstance() {
             return INSTANCE;
+        }
+    }
+
+    // ===== Lazy Initialization (스레드 안전하지 않음) =====
+    static class LazySingletonUnsafe {
+        private static LazySingletonUnsafe instance;
+        private final String id;
+
+        private LazySingletonUnsafe() {
+            this.id = "instance-" + System.nanoTime();
+        }
+
+        public static LazySingletonUnsafe getInstance() {
+            if (instance == null) { // ← 여러 스레드가 동시에 통과 가능!
+                instance = new LazySingletonUnsafe();
+            }
+            return instance;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        static void reset() {
+            instance = null;
         }
     }
 
@@ -119,6 +149,87 @@ public class SingletonBasicTest {
              */
             EagerSingleton instance = EagerSingleton.getInstance();
             assertThat(instance).isNotNull();
+        }
+    }
+
+    @Nested
+    class Lazy_초기화와_스레드_문제 {
+
+        @Test
+        void Lazy_초기화는_첫_호출_시_생성된다() {
+            LazySingletonUnsafe.reset();
+
+            /*
+             * Lazy Initialization:
+             * - 첫 getInstance() 호출 시 생성
+             * - 장점: 안 쓰면 안 만듦
+             * - 단점: 스레드 안전 문제!
+             */
+            LazySingletonUnsafe instance = LazySingletonUnsafe.getInstance();
+            assertThat(instance).isNotNull();
+        }
+
+        @Test
+        void 단일_스레드에서는_문제없다() {
+            LazySingletonUnsafe.reset();
+
+            LazySingletonUnsafe instance1 = LazySingletonUnsafe.getInstance();
+            LazySingletonUnsafe instance2 = LazySingletonUnsafe.getInstance();
+
+            assertThat(instance1).isSameAs(instance2);
+        }
+
+        @Test
+        void 멀티스레드에서_여러_인스턴스가_생성될_수_있다() throws InterruptedException {
+            LazySingletonUnsafe.reset();
+
+            int threadCount = 100;
+            Set<String> instanceIds = new HashSet<>();
+            CountDownLatch ready = new CountDownLatch(threadCount);
+            CountDownLatch start = new CountDownLatch(1);
+            CountDownLatch done = new CountDownLatch(threadCount);
+
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        ready.countDown();
+                        start.await(); // 모든 스레드가 동시에 시작
+
+                        LazySingletonUnsafe instance = LazySingletonUnsafe.getInstance();
+                        synchronized (instanceIds) {
+                            instanceIds.add(instance.getId());
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+
+            ready.await(); // 모든 스레드 준비 대기
+            start.countDown(); // 동시 시작
+            done.await(); // 완료 대기
+            executor.shutdown();
+
+            /*
+             * Race Condition:
+             * 스레드 A: if (instance == null) ← true, 아직 안 만들어짐
+             * 스레드 B: if (instance == null) ← true, 아직 안 만들어짐 (동시 통과!)
+             * 스레드 A: instance = new ... ← 인스턴스 1 생성
+             * 스레드 B: instance = new ... ← 인스턴스 2 생성 (덮어씀!)
+             */
+            System.out.println("생성된 인스턴스 수: " + instanceIds.size());
+
+            // 1개여야 정상이지만, Race Condition으로 여러 개 생성될 수 있음
+            // (항상 실패하진 않음 - 비결정적)
+            if (instanceIds.size() > 1) {
+                System.out.println("Race Condition 발생! 인스턴스가 여러 개 생성됨");
+            }
+
+            assertThat(instanceIds).isNotEmpty();
         }
     }
 }
