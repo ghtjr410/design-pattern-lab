@@ -327,4 +327,88 @@ public class BuilderLombokTest {
             assertThat(team.getMembers()).containsExactly("Charlie");
         }
     }
+
+    // ===== toBuilder =====
+    static class ImmutableConfig {
+        private final String name;
+        private final String value;
+        private final boolean enabled;
+
+        private ImmutableConfig(String name, String value, boolean enabled) {
+            this.name = name;
+            this.value = value;
+            this.enabled = enabled;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        // @Builder(toBuilder = true)가 생성하는 메서드
+        public Builder toBuilder() {
+            return new Builder().name(this.name).value(this.value).enabled(this.enabled);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public static class Builder {
+            private String name;
+            private String value;
+            private boolean enabled;
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder value(String value) {
+                this.value = value;
+                return this;
+            }
+
+            public Builder enabled(boolean enabled) {
+                this.enabled = enabled;
+                return this;
+            }
+
+            public ImmutableConfig build() {
+                return new ImmutableConfig(name, value, enabled);
+            }
+        }
+    }
+
+    @Nested
+    class toBuilder {
+
+        @Test
+        void 기존_객체를_복사하며_일부만_수정한다() {
+            ImmutableConfig original = ImmutableConfig.builder()
+                    .name("config1")
+                    .value("value1")
+                    .enabled(true)
+                    .build();
+
+            ImmutableConfig modified = original.toBuilder()
+                    .value("value2") // 이것만 변경
+                    .build();
+
+            // 원본은 불변
+            assertThat(original.getValue()).isEqualTo("value1");
+
+            // 새 객체는 변경된 값 반영
+            assertThat(modified.getName()).isEqualTo("config1"); // 유지
+            assertThat(modified.getValue()).isEqualTo("value2"); // 변경
+            assertThat(modified.isEnabled()).isTrue(); // 유지
+        }
+    }
 }
