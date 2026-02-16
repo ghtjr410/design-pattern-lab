@@ -89,6 +89,21 @@ public class SingletonThreadSageTest {
         }
     }
 
+    // ===== 방법 4: Enum (가장 안전) =====
+    enum EnumSingleton {
+        INSTANCE;
+
+        private final String id = "enum-" + System.nanoTime();
+
+        public String getId() {
+            return id;
+        }
+
+        public void doSomething() {
+            // 비즈니스 로직
+        }
+    }
+
     @Nested
     class Synchronized {
 
@@ -181,6 +196,38 @@ public class SingletonThreadSageTest {
         void 멀티스레드에서_안전하다() throws InterruptedException {
             Set<String> ids =
                     runConcurrentTest(() -> HolderSingleton.getInstance().getId());
+
+            assertThat(ids).hasSize(1);
+        }
+    }
+
+    @Nested
+    class Enum_가장_안전 {
+
+        @Test
+        void Enum으로_가장_안전하게() {
+            /*
+             * Enum Singleton (Joshua Bloch - Effective Java):
+             *
+             * 장점:
+             * - 직렬화 안전 (자동)
+             * - 리플렉션 공격 방어 (JVM이 차단)
+             * - 스레드 안전 (JVM이 보장)
+             * - 구현 가장 간단
+             *
+             * 단점:
+             * - Lazy 초기화 불가
+             * - 상속 불가
+             */
+            EnumSingleton instance = EnumSingleton.INSTANCE;
+            instance.doSomething();
+
+            assertThat(instance.getId()).isNotNull();
+        }
+
+        @Test
+        void 멀티스레드에서_안전하다() throws InterruptedException {
+            Set<String> ids = runConcurrentTest(() -> EnumSingleton.INSTANCE.getId());
 
             assertThat(ids).hasSize(1);
         }
