@@ -69,6 +69,26 @@ public class SingletonThreadSageTest {
         }
     }
 
+    // ===== 방법 3: Holder 패턴 (권장) =====
+    static class HolderSingleton {
+        private final String id = "holder-" + System.nanoTime();
+
+        private HolderSingleton() {}
+
+        // 내부 클래스는 getInstance() 호출 시점에 로딩됨
+        private static class Holder {
+            private static final HolderSingleton INSTANCE = new HolderSingleton();
+        }
+
+        public static HolderSingleton getInstance() {
+            return Holder.INSTANCE;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
     @Nested
     class Synchronized {
 
@@ -134,6 +154,35 @@ public class SingletonThreadSageTest {
              * volatile은 이 재정렬을 막음
              */
             assertThat(true).isTrue();
+        }
+    }
+
+    @Nested
+    class Holder_패턴_권장 {
+
+        @Test
+        void Holder_패턴으로_Lazy하면서_안전하게() {
+            /*
+             * Holder 패턴:
+             * - 내부 클래스(Holder)는 getInstance() 호출 전까지 로딩 안 됨
+             * - 클래스 로딩은 JVM이 스레드 안전하게 처리
+             *
+             * 장점:
+             * - Lazy 초기화
+             * - 스레드 안전 (JVM이 보장)
+             * - synchronized, volatile 불필요
+             * - 구현 간단
+             */
+            HolderSingleton instance = HolderSingleton.getInstance();
+            assertThat(instance).isNotNull();
+        }
+
+        @Test
+        void 멀티스레드에서_안전하다() throws InterruptedException {
+            Set<String> ids =
+                    runConcurrentTest(() -> HolderSingleton.getInstance().getId());
+
+            assertThat(ids).hasSize(1);
         }
     }
 
