@@ -201,4 +201,101 @@ public class BuilderFluentTest {
             assertThat(user.getName()).isEqualTo("John");
         }
     }
+
+    // ===== 필수/선택 파라미터 예제 =====
+    static class Member {
+        private final String id; // 필수
+        private final String name; // 필수
+        private final String email; // 선택
+        private final int age; // 선택 (기본값: 0)
+
+        private Member(Builder builder) {
+            this.id = builder.id;
+            this.name = builder.name;
+            this.email = builder.email;
+            this.age = builder.age;
+        }
+
+        String getId() {
+            return id;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        String getEmail() {
+            return email;
+        }
+
+        int getAge() {
+            return age;
+        }
+
+        static class Builder {
+            // 필수 - final로 생성자에서 강제
+            private final String id;
+            private final String name;
+
+            // 선택 - 기본값 설정
+            private String email = "";
+            private int age = 0;
+
+            // 필수값은 생성자로 강제
+            Builder(String id, String name) {
+                this.id = id;
+                this.name = name;
+            }
+
+            Builder email(String email) {
+                this.email = email;
+                return this;
+            }
+
+            Builder age(int age) {
+                this.age = age;
+                return this;
+            }
+
+            Member build() {
+                return new Member(this);
+            }
+        }
+    }
+
+    @Nested
+    class 필수_선택_파라미터 {
+
+        @Test
+        void 필수값은_Builder_생성자로_강제한다() {
+            Member member = new Member.Builder("M001", "John") // 필수
+                    .email("john@example.com") // 선택
+                    .age(30) // 선택
+                    .build();
+
+            assertThat(member.getId()).isEqualTo("M001");
+            assertThat(member.getName()).isEqualTo("John");
+        }
+
+        @Test
+        void 선택값은_생략_가능하다() {
+            Member member = new Member.Builder("M002", "Jane")
+                    // email, age 생략
+                    .build();
+
+            assertThat(member.getName()).isEqualTo("Jane");
+            assertThat(member.getEmail()).isEmpty(); // 기본값
+            assertThat(member.getAge()).isZero(); // 기본값
+        }
+
+        @Test
+        void 선택값_일부만_설정_가능하다() {
+            Member member = new Member.Builder("M003", "Tom")
+                    .age(25) // email은 생략
+                    .build();
+
+            assertThat(member.getAge()).isEqualTo(25);
+            assertThat(member.getEmail()).isEmpty();
+        }
+    }
 }
