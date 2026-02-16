@@ -233,6 +233,32 @@ public class SingletonThreadSageTest {
         }
     }
 
+    @Nested
+    class 비교_정리 {
+
+        @Test
+        void 어떤_방식을_선택할까() {
+            /*
+             * ┌─────────────────┬───────┬───────┬──────────┬──────────┐
+             * │ 방식             │ Lazy  │ 간단   │ 스레드     │ 직렬 화   │
+             * │                 │       │       │ 안전      │ 안전      │
+             * ├─────────────────┼───────┼───────┼──────────┼──────────┤
+             * │ Eager           │ ❌    │ ✅    │ ✅       │ ❌      │
+             * │ synchronized    │ ✅    │ ✅    │ ✅       │ ❌      │
+             * │ DCL             │ ✅    │ ❌    │ ✅       │ ❌      │
+             * │ Holder (권장)    │ ✅    │ ✅    │ ✅       │ ❌      │
+             * │ Enum (최고)      │ ❌    │ ✅    │ ✅       │ ✅      │
+             * └─────────────────┴───────┴───────┴──────────┴──────────┘
+             *
+             * 실무 추천:
+             * - 일반적: Holder 패턴
+             * - 직렬화/리플렉션 방어 필요: Enum
+             * - Spring 사용: 직접 구현 안 함 (@Component가 Singleton)
+             */
+            assertThat(true).isTrue();
+        }
+    }
+
     // ===== Helper =====
     private Set<String> runConcurrentTest(Supplier<String> idSupplier) throws InterruptedException {
         int threadCount = 100;
