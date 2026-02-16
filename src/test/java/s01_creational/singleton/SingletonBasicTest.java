@@ -84,4 +84,41 @@ public class SingletonBasicTest {
             assertThat(instance2).isSameAs(instance3);
         }
     }
+
+    @Nested
+    class GoF_원형 {
+
+        @Test
+        void Eager_Singleton_구조() {
+            /*
+             * GoF Singleton 핵심 3가지:
+             * 1. private static final INSTANCE - 유일한 인스턴스
+             * 2. private 생성자 - 외부 생성 차단
+             * 3. public static getInstance() - 접근점
+             */
+            EagerSingleton instance = EagerSingleton.getInstance();
+
+            assertThat(instance).isNotNull();
+        }
+
+        @Test
+        void 몇_번을_호출해도_같은_인스턴스다() {
+            EagerSingleton first = EagerSingleton.getInstance();
+            EagerSingleton second = EagerSingleton.getInstance();
+
+            assertThat(first).isSameAs(second);
+        }
+
+        @Test
+        void Eager는_클래스_로딩_시점에_생성된다() {
+            /*
+             * Eager Initialization:
+             * - 클래스 로딩 시 바로 생성
+             * - 장점: 간단, 스레드 안전
+             * - 단점: 안 써도 생성됨
+             */
+            EagerSingleton instance = EagerSingleton.getInstance();
+            assertThat(instance).isNotNull();
+        }
+    }
 }
