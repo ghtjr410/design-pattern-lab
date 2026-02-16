@@ -298,4 +298,71 @@ public class BuilderFluentTest {
             assertThat(member.getEmail()).isEmpty();
         }
     }
+
+    // ===== Telescoping Constructor 비교 =====
+    @Nested
+    class Telescoping_Constructor_비교 {
+
+        // 안티패턴: 생성자 파라미터 지옥
+        static class TelescopingUser {
+            private final String name;
+            private final String email;
+            private final int age;
+            private final String phone;
+            private final String address;
+
+            TelescopingUser(String name) {
+                this(name, null, 0, null, null);
+            }
+
+            TelescopingUser(String name, String email) {
+                this(name, email, 0, null, null);
+            }
+
+            TelescopingUser(String name, String email, int age) {
+                this(name, email, age, null, null);
+            }
+
+            TelescopingUser(String name, String email, int age, String phone) {
+                this(name, email, age, phone, null);
+            }
+
+            TelescopingUser(String name, String email, int age, String phone, String address) {
+                this.name = name;
+                this.email = email;
+                this.age = age;
+                this.phone = phone;
+                this.address = address;
+            }
+
+            String getName() {
+                return name;
+            }
+        }
+
+        @Test
+        void Before_파라미터가_뭔지_모름() {
+            TelescopingUser user = new TelescopingUser(
+                    "John", // name?
+                    "john@mail.com", // email?
+                    30, // age?
+                    "010-1234-5678", // phone? address?
+                    "Seoul" // ???
+                    );
+
+            assertThat(user.getName()).isEqualTo("John");
+        }
+
+        @Test
+        void After_Builder로_명확하게() {
+            // 각 값의 의미가 명확
+            User user = new User.Builder()
+                    .name("John")
+                    .email("john@mail.com")
+                    .age(30)
+                    .build();
+
+            assertThat(user.getName()).isEqualTo("John");
+        }
+    }
 }
