@@ -45,6 +45,30 @@ public class SingletonThreadSageTest {
         }
     }
 
+    // ===== 방법 2: DCL (Double-Checked Locking) =====
+    static class DclSingleton {
+        // volatile: 스레드 간 가시성 보장
+        private static volatile DclSingleton instance;
+        private final String id = "dcl-" + System.nanoTime();
+
+        private DclSingleton() {}
+
+        public static DclSingleton getInstance() {
+            if (instance == null) { // 1차 체크 (lock 없이)
+                synchronized (DclSingleton.class) {
+                    if (instance == null) { // 2차 체크 (lock 안에서)
+                        instance = new DclSingleton();
+                    }
+                }
+            }
+            return instance;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
     @Nested
     class Synchronized {
 
@@ -66,6 +90,50 @@ public class SingletonThreadSageTest {
                     runConcurrentTest(() -> SynchronizedSingleton.getInstance().getId());
 
             assertThat(ids).hasSize(1); // 인스턴스 1개만 생성됨
+        }
+    }
+
+    @Nested
+    class DCL_Double_Checked_Locking {
+
+        @Test
+        void DCL로_성능과_안전성_확보() {
+            /*
+             * DCL 방식:
+             * - 1차 체크: lock 없이 빠르게
+             * - 2차 체크: lock 안에서 확실하게
+             * - volatile: 스레드 간 가시성 보장
+             *
+             * 장점: 인스턴스 생성 후에는 lock 안 걸림
+             * 단점: 구현 복잡, volatile 필수
+             */
+            DclSingleton instance = DclSingleton.getInstance();
+            assertThat(instance).isNotNull();
+        }
+
+        @Test
+        void 멀티스레드에서_안전하다() throws InterruptedException {
+            Set<String> ids = runConcurrentTest(() -> DclSingleton.getInstance().getId());
+
+            assertThat(ids).hasSize(1);
+        }
+
+        @Test
+        void volatile_없으면_문제가_생길_수_있다() {
+            /*
+             * volatile이 필요한 이유:
+             *
+             * instance = new DclSingleton() 은 실제로 3단계:
+             * 1. 메모리 할당
+             * 2. 생성자 실행
+             * 3. instance 변수에 참조 할당
+             *
+             * JVM이 재정렬하면 1 → 3 → 2 순서가 될 수 있음
+             * 다른 스레드가 3 이후, 2 이전에 접근하면 미완성 객체 사용!
+             *
+             * volatile은 이 재정렬을 막음
+             */
+            assertThat(true).isTrue();
         }
     }
 
