@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
  * - 시나리오별 팩토리 메서드로 의도 명확하게
  */
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-public class MemberTestFixtureTest {
+public class BuilderTestFixtureTest {
 
     // ===== 도메인 객체 =====
     enum MemberGrade {
