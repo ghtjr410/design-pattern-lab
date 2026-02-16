@@ -1,6 +1,7 @@
 package s01_creational.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -409,6 +410,79 @@ public class BuilderLombokTest {
             assertThat(modified.getName()).isEqualTo("config1"); // 유지
             assertThat(modified.getValue()).isEqualTo("value2"); // 변경
             assertThat(modified.isEnabled()).isTrue(); // 유지
+        }
+    }
+
+    // ===== 검증 추가 =====
+    static class ValidatedDto {
+        private final String username;
+        private final String password;
+
+        private ValidatedDto(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public static class Builder {
+            private String username;
+            private String password;
+
+            public Builder username(String username) {
+                this.username = username;
+                return this;
+            }
+
+            public Builder password(String password) {
+                this.password = password;
+                return this;
+            }
+
+            // Lombok @Builder는 이 메서드를 직접 작성하면 오버라이드됨
+            public ValidatedDto build() {
+                if (username == null || username.length() < 4) {
+                    throw new IllegalStateException("username: 4자 이상");
+                }
+                if (password == null || password.length() < 8) {
+                    throw new IllegalStateException("password: 8자 이상");
+                }
+                return new ValidatedDto(username, password);
+            }
+        }
+    }
+
+    @Nested
+    class 검증_추가 {
+
+        @Test
+        void build_메서드를_오버라이드하여_검증한다() {
+            assertThatThrownBy(() -> ValidatedDto.builder()
+                            .username("abc") // 4자 미만
+                            .password("12345678")
+                            .build())
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("username: 4자 이상");
+        }
+
+        @Test
+        void 검증_통과시_객체_생성() {
+            ValidatedDto dto = ValidatedDto.builder()
+                    .username("john_doe")
+                    .password("securepass123")
+                    .build();
+
+            assertThat(dto.getUsername()).isEqualTo("john_doe");
         }
     }
 }
