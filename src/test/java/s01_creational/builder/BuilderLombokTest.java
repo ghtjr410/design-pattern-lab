@@ -2,6 +2,8 @@ package s01_creational.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Nested;
@@ -197,6 +199,132 @@ public class BuilderLombokTest {
 
             assertThat(config.getPort()).isEqualTo(443);
             assertThat(config.isSsl()).isTrue();
+        }
+    }
+
+    // ===== @Singular =====
+    static class TeamDto {
+        private final String name;
+        private final List<String> members;
+        private final List<String> tags;
+
+        private TeamDto(String name, List<String> members, List<String> tags) {
+            this.name = name;
+            this.members = List.copyOf(members);
+            this.tags = List.copyOf(tags);
+        }
+
+        public static TeamDtoBuilder builder() {
+            return new TeamDtoBuilder();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public List<String> getMembers() {
+            return members;
+        }
+
+        public List<String> getTags() {
+            return tags;
+        }
+
+        public static class TeamDtoBuilder {
+            private String name;
+            private final List<String> members = new ArrayList<>();
+            private final List<String> tags = new ArrayList<>();
+
+            public TeamDtoBuilder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            // @Singular: 단수형 메서드 (하나씩 추가)
+            public TeamDtoBuilder member(String member) {
+                this.members.add(member);
+                return this;
+            }
+
+            // @Singular: 복수형 메서드 (한번에 추가)
+            public TeamDtoBuilder members(List<String> members) {
+                this.members.addAll(members);
+                return this;
+            }
+
+            public TeamDtoBuilder clearMembers() {
+                this.members.clear();
+                return this;
+            }
+
+            public TeamDtoBuilder tag(String tag) {
+                this.tags.add(tag);
+                return this;
+            }
+
+            public TeamDtoBuilder tags(List<String> tags) {
+                this.tags.addAll(tags);
+                return this;
+            }
+
+            public TeamDto build() {
+                return new TeamDto(name, members, tags);
+            }
+        }
+    }
+
+    @Nested
+    class Singular {
+
+        @Test
+        void Singular_없으면_리스트를_한번에_넣어야_한다() {
+            // @Singular 없을 때
+            TeamDto team = TeamDto.builder()
+                    .name("Backend Team")
+                    .members(List.of("Alice", "Bob", "Charlie")) // 한 번에
+                    .tags(List.of("java", "spring"))
+                    .build();
+
+            assertThat(team.getMembers()).containsExactly("Alice", "Bob", "Charlie");
+        }
+
+        @Test
+        void Singular_있으면_하나씩_추가할_수_있다() {
+            // @Singular 있을 때: member() 단수형 메서드 사용
+            TeamDto team = TeamDto.builder()
+                    .name("Backend Team")
+                    .member("Alice") // 하나씩
+                    .member("Bob") // 하나씩
+                    .member("Charlie") // 하나씩
+                    .tag("java")
+                    .tag("spring")
+                    .build();
+
+            assertThat(team.getMembers()).containsExactly("Alice", "Bob", "Charlie");
+        }
+
+        @Test
+        void 단수형과_복수형을_섞어서_사용할_수_있다() {
+            TeamDto team = TeamDto.builder()
+                    .name("QA Team")
+                    .members(List.of("Dave", "Eve")) // 복수형
+                    .member("Frank") // 단수형 추가
+                    .build();
+
+            assertThat(team.getMembers()).containsExactly("Dave", "Eve", "Frank");
+        }
+
+        @Test
+        void clear로_초기화할_수_있다() {
+            TeamDto team = TeamDto.builder()
+                    .name("Team")
+                    .member("Alice")
+                    .member("Bob")
+                    .clearMembers() // 초기화
+                    .member("Charlie")
+                    .build();
+
+            assertThat(team.getMembers()).containsExactly("Charlie");
         }
     }
 }
