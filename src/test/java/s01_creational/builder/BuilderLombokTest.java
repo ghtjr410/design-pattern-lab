@@ -101,4 +101,102 @@ public class BuilderLombokTest {
             assertThat(user.getName()).isNull();
         }
     }
+
+    // ===== @Builder.Default =====
+    static class ConfigDto {
+        private final String host;
+        private final int port;
+        private final int timeout;
+        private final boolean ssl;
+
+        private ConfigDto(String host, int port, int timeout, boolean ssl) {
+            this.host = host;
+            this.port = port;
+            this.timeout = timeout;
+            this.ssl = ssl;
+        }
+
+        public static ConfigDtoBuilder builder() {
+            return new ConfigDtoBuilder();
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public int getTimeout() {
+            return timeout;
+        }
+
+        public boolean isSsl() {
+            return ssl;
+        }
+
+        public static class ConfigDtoBuilder {
+            private String host;
+            // @Builder.Default
+            private int port = 8080;
+            // @Builder.Default
+            private int timeout = 30000;
+            // @Builder.Default
+            private boolean ssl = false;
+
+            public ConfigDtoBuilder host(String host) {
+                this.host = host;
+                return this;
+            }
+
+            public ConfigDtoBuilder port(int port) {
+                this.port = port;
+                return this;
+            }
+
+            public ConfigDtoBuilder timeout(int timeout) {
+                this.timeout = timeout;
+                return this;
+            }
+
+            public ConfigDtoBuilder ssl(boolean ssl) {
+                this.ssl = ssl;
+                return this;
+            }
+
+            public ConfigDto build() {
+                return new ConfigDto(host, port, timeout, ssl);
+            }
+        }
+    }
+
+    @Nested
+    class Builder_Default {
+
+        @Test
+        void 기본값이_설정된다() {
+            ConfigDto config = ConfigDto.builder()
+                    .host("localhost")
+                    // port, timeout, ssl 생략
+                    .build();
+
+            assertThat(config.getHost()).isEqualTo("localhost");
+            assertThat(config.getPort()).isEqualTo(8080); // 기본값
+            assertThat(config.getTimeout()).isEqualTo(30000); // 기본값
+            assertThat(config.isSsl()).isFalse(); // 기본값
+        }
+
+        @Test
+        void 기본값을_재정의할_수_있다() {
+            ConfigDto config = ConfigDto.builder()
+                    .host("api.example.com")
+                    .port(443)
+                    .ssl(true)
+                    .build();
+
+            assertThat(config.getPort()).isEqualTo(443);
+            assertThat(config.isSsl()).isTrue();
+        }
+    }
 }
