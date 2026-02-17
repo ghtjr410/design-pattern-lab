@@ -195,4 +195,48 @@ public class SingletonRealWorldTest {
             assertThat(true).isTrue();
         }
     }
+
+    @Nested
+    class 언제_직접_구현하나 {
+
+        @Test
+        void Singleton_직접_구현이_필요한_경우() {
+            /*
+             * 직접 구현하는 경우:
+             *
+             * 1. Spring 없는 환경
+             *    - 순수 Java 라이브러리
+             *    - 안드로이드 (Dagger/Hilt 없이)
+             *
+             * 2. 프레임워크 내부 구현
+             *    - 커넥션 풀 관리자
+             *    - 캐시 매니저
+             *
+             * 3. 설정/환경 객체
+             *    - Runtime.getRuntime()
+             *    - System.getSecurityManager()
+             */
+            assertThat(true).isTrue();
+        }
+
+        @Test
+        void Singleton을_피해야_하는_경우() {
+            /*
+             * 피해야 하는 경우:
+             *
+             * 1. 상태가 자주 변하는 객체
+             *    - 전역 상태 변경은 추적 어려움
+             *
+             * 2. 비즈니스 로직 클래스
+             *    - 테스트 어려움
+             *    - DI 사용 권장
+             *
+             * 3. 멀티테넌시 환경
+             *    - 테넌트별로 다른 인스턴스 필요
+             *
+             * → 대부분 Spring @Service, @Component로 충분
+             */
+            assertThat(true).isTrue();
+        }
+    }
 }
