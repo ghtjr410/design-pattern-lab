@@ -239,4 +239,26 @@ public class SingletonRealWorldTest {
             assertThat(true).isTrue();
         }
     }
+
+    @Nested
+    class 실무_권장사항 {
+
+        @Test
+        void 정리() {
+            /*
+             * ┌─────────────────────────────────────────────────┐
+             * │ 상황                    │ 권장                    │
+             * ├─────────────────────────────────────────────────┤
+             * │ Spring 사용             │ @Component 사용         │
+             * │ 순수 Java, Lazy 필요     │ Holder 패턴             │
+             * │ 직렬화/리플렉션 방어        │ Enum                   │
+             * │ 테스트 중요한 로직         │ Singleton 피하기         │
+             * └─────────────────────────────────────────────────┘
+             *
+             * 핵심:
+             * "Singleton 패턴을 알아야 하지만, 직접 구현할 일은 거의 없다"
+             */
+            assertThat(true).isTrue();
+        }
+    }
 }
