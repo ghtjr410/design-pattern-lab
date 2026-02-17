@@ -153,4 +153,46 @@ public class SingletonRealWorldTest {
             assertThat(counter2.getCount()).isEqualTo(1);
         }
     }
+
+    @Nested
+    class Spring에서의_Singleton {
+
+        @Test
+        void Spring은_DI_컨테이너가_Singleton을_관리한다() {
+            /*
+             * Spring 방식:
+             *
+             * @Service  // 기본이 Singleton scope
+             * public class OrderService {
+             *     private final Counter counter;
+             *
+             *     public OrderService(Counter counter) {
+             *         this.counter = counter;
+             *     }
+             * }
+             *
+             * @Component
+             * public class CounterImpl implements Counter { }
+             *
+             * 장점:
+             * - 직접 Singleton 구현 안 해도 됨
+             * - 의존성 주입으로 테스트 용이
+             * - 생명주기 관리 자동
+             */
+            assertThat(true).isTrue();
+        }
+
+        @Test
+        void Spring_Scope_종류() {
+            /*
+             * @Scope("singleton")   - 기본값, 애플리케이션에 1개
+             * @Scope("prototype")   - 요청마다 새로 생성
+             * @Scope("request")     - HTTP 요청마다 1개
+             * @Scope("session")     - 세션마다 1개
+             *
+             * 직접 Singleton 패턴 구현할 일이 거의 없음
+             */
+            assertThat(true).isTrue();
+        }
+    }
 }
