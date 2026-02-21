@@ -5,7 +5,7 @@
 [![Java Version](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![JUnit Version](https://img.shields.io/badge/JUnit-5.10-green.svg)](https://junit.org/junit5/)
 
-## 📌 소개
+## 소개
 
 이 저장소는 **디자인 패턴의 본질**을 학습 테스트를 통해 이해합니다.
 
@@ -15,7 +15,7 @@
 "패턴을 아는 것과 패턴을 쓸 줄 아는 것은 다르다"
 ```
 
-## 🎯 학습 목표
+## 학습 목표
 
 - GOF 23개 패턴의 **핵심 의도**와 **구조** 이해
 - 각 패턴의 **실무 적용 사례** 체득
@@ -23,7 +23,7 @@
 - Spring 프레임워크에서 **패턴이 어떻게 활용되는지** 파악
 - 유사한 패턴들의 **차이점** 명확히 구분
 
-## 🛠 기술 스택
+## 기술 스택
 
 | 구분 | 기술 |
 |------|------|
@@ -33,17 +33,17 @@
 | Build Tool | Gradle |
 | Framework | Spring Boot 3.x (일부 테스트) |
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
 ```
 src/test/java/
-├── 01_creational/      # 생성 패턴 (5개)
-├── 02_structural/      # 구조 패턴 (7개)
-├── 03_behavioral/      # 행위 패턴 (11개)
-└── 04_practical/       # 실무 패턴 (8개)
+├── s01_creational/      # 생성 패턴 (5개)
+├── s02_structural/      # 구조 패턴 (7개)
+├── s03_behavioral/      # 행위 패턴 (11개)
+└── s04_practical/       # 실무 패턴 (8개)
 ```
 
-## 📚 학습 내용
+## 학습 내용
 
 ### Part 1: 생성 패턴 (Creational Patterns)
 
@@ -86,8 +86,8 @@ src/test/java/
 
 | 테스트 | 학습 내용 |
 |--------|-----------|
-| `BuilderBasicTest` | 패턴의 핵심 구조, Director 역할 |
-| `BuilderRealWorldTest` | 복잡한 주문 객체 생성 |
+| `BuilderGofTest` | GOF 원형 구조, Director 역할 |
+| `BuilderFluentTest` | 모던 Fluent API, 생성자 오버로딩 비교 |
 | `BuilderLombokTest` | @Builder 활용 |
 | `BuilderTestFixtureTest` | 테스트 데이터 생성 |
 
@@ -105,8 +105,7 @@ src/test/java/
 |--------|-----------|
 | `SingletonBasicTest` | 패턴의 핵심 구조 |
 | `SingletonThreadSafeTest` | DCL, Holder, Enum 방식 |
-| `SingletonBreakTest` | Reflection, 직렬화로 깨지는 경우 |
-| `SingletonSpringTest` | Spring Bean Scope와 비교 |
+| `SingletonRealWorldTest` | 실무 문제점, DI 대안, 실무 권장사항 |
 
 **핵심 질문**
 - 왜 Enum이 가장 안전한 Singleton 구현인가?
@@ -583,7 +582,7 @@ src/test/java/
 
 ---
 
-## 📝 학습 테스트 작성 원칙
+## 학습 테스트 작성 원칙
 
 ### 1. 테스트 구조
 
@@ -639,17 +638,17 @@ XxxPattern/
 
 ---
 
-## 🚀 실행 방법
+## 실행 방법
 
 ```bash
 # 전체 테스트 실행
 ./gradlew test
 
 # 특정 패턴 분류만 실행
-./gradlew test --tests "*.01_creational.*"
-./gradlew test --tests "*.02_structural.*"
-./gradlew test --tests "*.03_behavioral.*"
-./gradlew test --tests "*.04_practical.*"
+./gradlew test --tests "*.s01_creational.*"
+./gradlew test --tests "*.s02_structural.*"
+./gradlew test --tests "*.s03_behavioral.*"
+./gradlew test --tests "*.s04_practical.*"
 
 # 특정 패턴만 실행
 ./gradlew test --tests "*.strategy.*"
@@ -660,7 +659,7 @@ open build/reports/tests/test/index.html
 
 ---
 
-## 📖 참고 자료
+## 참고 자료
 
 - [Design Patterns: Elements of Reusable Object-Oriented Software (GOF)](https://www.oreilly.com/library/view/design-patterns-elements/0201633612/)
 - [Head First Design Patterns](https://www.oreilly.com/library/view/head-first-design/9781492077992/)

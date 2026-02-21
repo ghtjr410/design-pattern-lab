@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
  * 2. Creator는 Product를 "생성"하는 방법을 모른다 (서브클래스에 위임)
  * 3. 이를 통해 생성과 사용의 관심사를 분리한다
  */
-public class FactoryMethodBasic {
+public class FactoryMethodBasicTest {
 
     // ===== Product 인터페이스 =====
     interface Document {
