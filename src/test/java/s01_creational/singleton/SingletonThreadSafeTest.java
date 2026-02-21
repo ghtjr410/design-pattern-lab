@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  * 4. Enum - 가장 안전 (Joshua Bloch 권장)
  */
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-public class SingletonThreadSageTest {
+public class SingletonThreadSafeTest {
 
     // ===== 방법 1: synchronized =====
     static class SynchronizedSingleton {
